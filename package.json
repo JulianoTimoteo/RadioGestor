@@ -1,9 +1,0 @@
-{
-  "name": "link-frota-main",
-  "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
-  "scripts": {
-    "build": "npx tailwindcss build -i index.html -o tailwind.css"
-  }
-}

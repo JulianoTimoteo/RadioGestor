@@ -2753,9 +2753,7 @@ function renderThemeButton() {
     const title = isDark ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro';
 
     return `
-        <button onclick="toggleTheme()" 
-            class="text-gray-500 dark:text-gray-300 hover:text-yellow-500 dark:hover:text-yellow-300 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" 
-            title="${title}">
+        <button onclick="toggleTheme()" class="icon-btn" title="${title}" aria-label="${title}">
             <i class="${icon}"></i>
         </button>
     `;
@@ -2835,7 +2833,7 @@ function showInstallDialog() {
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Esta caixa fechará automaticamente em 10 segundos.
             </p>
-            <button id="pwa-install-button" class="w-full flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-500 hover:bg-indigo-600 shadow-md transition-colors">
+            <button id="pwa-install-button" class="btn btn--primary btn--block">
                 <i class="fas fa-download mr-2"></i> Instalar Agora
             </button>
         </div>
@@ -2880,121 +2878,91 @@ function renderTopBar() {
         { id: 'dashboard', name: 'Dashboard', icon: 'fa-chart-line' },
         { id: 'cadastro', name: 'Cadastro', icon: 'fa-box' },
         { id: 'pesquisa', name: 'Pesquisa', icon: 'fa-search' },
-        { id: 'settings', name: 'Configurações', icon: 'fa-cog', adminOnly: true },
+        { id: 'settings', name: 'Ajustes', icon: 'fa-cog', adminOnly: true },
     ];
-    
-    // Filtra as abas para o usuário atual
+
     const tabs = allTabs.filter(tab => {
         if (!currentUser) return false;
-        if (tab.id === 'settings' && currentUser.role !== 'admin') {
-            // Permite a aba Settings apenas para Admin.
-            return false;
-        }
-        // Permite acesso se for admin OU se tiver a permissão específica
+        if (tab.id === 'settings' && currentUser.role !== 'admin') return false;
         return currentUser.role === 'admin' || (currentUser.permissions && currentUser.permissions[tab.id] === true);
     });
-    
-    const tabLinks = tabs.map(tab => {
-        const isActive = currentPage === tab.id;
-        // 'checked' simula o estado ativo do radio button
-        const isChecked = isActive ? 'checked' : ''; 
-        
-        let iconClass = tab.icon;
 
-        return `
-            <label class="radio-label" onclick="updateState('page', '${tab.id}')">
-                <input type="radio" class="radio-input" name="main_nav_choice" ${isChecked} />
-                <span class="radio-custom"></span>
-                <span class="radio-text flex items-center space-x-1">
-                    <i class="fas ${iconClass} text-base"></i> 
-                    <span>${tab.name}</span>
-                </span>
-            </label>
-        `;
-    }).join('');
+    const navItems = tabs.map(tab => `
+        <button type="button"
+            class="nav-seg__item ${currentPage === tab.id ? 'is-active' : ''}"
+            aria-current="${currentPage === tab.id ? 'page' : 'false'}"
+            onclick="updateState('page', '${tab.id}')">
+            <i class="fas ${tab.icon}" aria-hidden="true"></i>
+            <span>${tab.name}</span>
+        </button>
+    `).join('');
 
-    // 🌟 NOVO: Lógica do Sino de Integridade
     const duplicityCount = duplicities.length;
     const duplicityBell = duplicityCount > 0 ? `
-        <button onclick="showDuplicityModal()" class="relative text-gray-500 dark:text-red-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-red-100 dark:hover:bg-gray-700" title="Alerta Crítico de Duplicidade de Dados">
+        <button onclick="showDuplicityModal()" class="icon-btn icon-btn--alert" title="Alerta crítico de duplicidade de dados" aria-label="Duplicidades detectadas">
             <i class="fas fa-bell duplicity-bell-active"></i>
-            <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">${duplicityCount}</span>
+            <span class="badge-count">${duplicityCount > 99 ? '99+' : duplicityCount}</span>
         </button>
     ` : `
-        <button onclick="showDuplicityModal()" class="relative text-gray-500 dark:text-gray-300 hover:text-green-main transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Integridade de Dados (OK)">
+        <button onclick="showDuplicityModal()" class="icon-btn" title="Integridade de dados (OK)" aria-label="Integridade de dados">
             <i class="fas fa-heart-pulse"></i>
         </button>
     `;
 
+    const nameParts = (currentUser.name || '').trim().split(/\s+/).filter(Boolean);
+    const initials = (nameParts.slice(0, 2).map(n => n[0]).join('') || '??').toUpperCase();
+    const shortName = nameParts.slice(0, 2).join(' ') || 'Usuário';
 
     return `
-        <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700">
-            <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-                <div class="flex justify-between items-center h-14 gap-3">
-                    
-                    <div class="flex items-center gap-3 min-w-0">
-                        <img src="https://usinapitangueiras.com.br/wp-content/uploads/2020/04/usina-pitangueiras-logo.png" alt="Usina Pitangueiras"	
-                            class="h-9 w-auto max-w-[110px] object-contain select-none"
-                            onerror="this.onerror=null; this.src='https://placehold.co/180x40/40800c/FFFFFF?text=Link-Frota'; this.alt='Link-Frota'">
-                        <div class="hidden sm:block h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
-                        <div class="hidden sm:block min-w-0">
-                            <p class="text-[11px] font-semibold text-gray-900 dark:text-white leading-tight">Link-Frota</p>
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">Gestão de Frotas Agrícolas</p>
-                        </div>
+        <header class="app-header">
+            <div class="app-header__inner">
+                <div class="brand">
+                    <img src="https://usinapitangueiras.com.br/wp-content/uploads/2020/04/usina-pitangueiras-logo.png" alt="Usina Pitangueiras"
+                        onerror="this.onerror=null; this.src='https://placehold.co/180x40/40800c/FFFFFF?text=Link-Frota'; this.alt='Link-Frota'">
+                    <span class="brand__divider hidden sm:block"></span>
+                    <div class="hidden sm:block min-w-0">
+                        <p class="brand__name">Link-Frota</p>
+                        <p class="brand__tag">Gestão de Frotas Agrícolas</p>
                     </div>
+                </div>
 
-                    <nav class="hidden md:flex flex-1 justify-center">
-                        <div class="radio-group-container border-b border-gray-100 dark:border-gray-700">
-                            ${tabLinks}
-                        </div>
-                    </nav>
-                    
-                    <div class="flex items-center gap-1 sm:gap-2">
-                        
-                        ${renderInstallButton()} ${renderThemeButton()} ${duplicityBell}
-                        
-                        ${currentUser.role === 'admin' ? `
-                        <button onclick="renderPendingApprovalsModal()" class="relative text-gray-500 dark:text-gray-300 hover:text-yellow-600 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Novas Solicitações de Acesso" aria-label="Solicitações de acesso pendentes">
-                            <i class="fas fa-inbox"></i>
-                            ${pendingUsers.length > 0 ? `
-                            <span class="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold leading-none text-white bg-red-600 rounded-full">${pendingUsers.length}</span>
-                            ` : ''}
-                        </button>
-                        ` : ''}
+                <nav class="nav-seg" aria-label="Navegação principal">
+                    ${navItems}
+                </nav>
 
-                        <button onclick="showProfileModal()" class="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Perfil" aria-label="Abrir perfil">
-                            <div class="text-right hidden sm:block leading-tight">
-                                <p class="text-sm font-medium text-gray-900 dark:text-white max-w-[160px] truncate">${(currentUser.name || '').split(' ').slice(0, 2).join(' ')}</p>
-                                <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">${currentUser.role === 'admin' ? 'Administrador' : 'Usuário'}</p>
-                            </div>
-                            <span class="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[#40800c] text-white text-xs font-bold ring-2 ring-gray-200 dark:ring-gray-700">
-                                ${(currentUser.name || '??').split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()}
-                            </span>
-                        </button>
-                        <button onclick="handleLogout()" class="text-gray-500 dark:text-gray-300 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="Sair" aria-label="Sair do sistema">
-                            <i class="fas fa-right-from-bracket"></i>
-                        </button>
-                    </div>
+                <div class="hdr-actions">
+                    ${renderThemeButton()}
+                    ${duplicityBell}
+                    ${currentUser.role === 'admin' ? `
+                    <button onclick="renderPendingApprovalsModal()" class="icon-btn" title="Novas solicitações de acesso" aria-label="Solicitações de acesso pendentes">
+                        <i class="fas fa-inbox"></i>
+                        ${pendingUsers.length > 0 ? `<span class="badge-count">${pendingUsers.length}</span>` : ''}
+                    </button>` : ''}
+
+                    <button onclick="showProfileModal()" class="user-chip" title="Perfil" aria-label="Abrir perfil">
+                        <span class="user-chip__meta hidden sm:block">
+                            <span class="user-chip__name block">${shortName}</span>
+                            <span class="user-chip__role block">${currentUser.role === 'admin' ? 'Administrador' : 'Usuário'}</span>
+                        </span>
+                        <span class="avatar">${initials}</span>
+                    </button>
+
+                    <button onclick="handleLogout()" class="icon-btn icon-btn--danger" title="Sair" aria-label="Sair do sistema">
+                        <i class="fas fa-right-from-bracket"></i>
+                    </button>
                 </div>
             </div>
         </header>
-        <nav class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 fixed bottom-0 left-0 right-0 z-10 md:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-                    <div class="flex justify-around">
-                        ${tabs.map(tab => {
-                            const isActive = currentPage === tab.id;
-                            const activeClass = isActive ? 'text-[#40800c] tab-active font-semibold' : 'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200';
-                            const mobileName = tab.name;							
 
-                            return `
-                                <a href="#${tab.id}" class="py-2.5 px-3 flex flex-col items-center justify-center space-y-1 ${activeClass} transition-colors border-b-2 border-transparent">
-                                    <i class="fas ${tab.icon} text-lg"></i>
-                                    <span class="text-[11px] font-medium leading-none">${mobileName}</span>
-                                </a>
-                            `;
-                        }).join('')}
-                    </div>
-                </nav>
-                <div class="h-16 md:hidden"></div> `;
+        <nav class="mobile-nav" aria-label="Navegação principal (mobile)">
+            ${tabs.map(tab => `
+                <a href="#${tab.id}" class="mobile-nav__item ${currentPage === tab.id ? 'is-active' : ''}"
+                   aria-current="${currentPage === tab.id ? 'page' : 'false'}">
+                    <i class="fas ${tab.icon}" aria-hidden="true"></i>
+                    <span>${tab.name}</span>
+                </a>
+            `).join('')}
+        </nav>`;
 }
 
 function renderLogin() {
@@ -3007,7 +2975,7 @@ function renderLogin() {
         content = `
             <div class="text-center">
                 <img src="https://usinapitangueiras.com.br/wp-content/uploads/2020/04/usina-pitangueiras-logo.png" alt="Logo Usina Pitangueiras"	
-                    class="mx-auto h-20 w-auto mb-4"	
+                    class="auth-logo"	
                     onerror="this.onerror=null; this.src='https://placehold.co/150x80/40800c/FFFFFF?text=Logo'; this.alt='Logo Placeholder'">
                 <h2 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
                     Acesso ao Sistema
@@ -3018,12 +2986,12 @@ function renderLogin() {
             </div>
             <form id="login-form" class="mt-8 space-y-6">
                 <input type="text" id="login-input" placeholder="Email ou Nome de Usuário" required	
-                    class="appearance-none relative block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-green-main focus:border-green-main focus:z-10 sm:text-sm shadow-sm"
+                    class="w-full"
                     value="${savedLogin}"
                 >
                 <div class="relative">
                     <input type="password" id="password" placeholder="Senha" required	
-                        class="appearance-none relative block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-green-main focus:border-green-main focus:z-10 sm:text-sm shadow-sm pr-10"
+                        class="w-full pr-10"
                         value=""
                     >
                     <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 focus:outline-none" title="Mostrar/Ocultar Senha">
@@ -3042,15 +3010,15 @@ function renderLogin() {
                 </div>
 
                 <button type="submit"	
-                    class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-green-main hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-main transition-all shadow-md">
+                    class="btn btn--primary btn--block">
                     <i class="fas fa-lock mr-2"></i>
                     Entrar
                 </button>
             </form>
             
             <button type="button" onclick="updateState('loginView', 'solicitar')"
-                class="group relative w-full flex justify-center py-3 px-4 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-md mt-4">
-                <i class="fas fa-user-plus mr-2 text-indigo-500"></i>
+                class="btn btn--secondary btn--block mt-4">
+                <i class="fas fa-user-plus mr-2"></i>
                 Solicitar Acesso
             </button>
         `;
@@ -3059,12 +3027,10 @@ function renderLogin() {
     }
 
     return `
-        <div class="flex items-center justify-center min-h-screen bg-[#40800c]">
-            <div class="w-full max-w-md p-8 space-y-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-green-main/30 dark:border-green-main/50">
+        <div class="auth-bg">
+            <div class="auth-card">
                 ${content}
-                <p class="text-xs text-center text-gray-500 dark:text-gray-400">
-                    Usina Pitangueiras - "A ENERGIA QUE MOVE A REGIÃO"
-                </p>
+                <p class="auth-tagline">Usina Pitangueiras &middot; A energia que move a região</p>
             </div>
         </div>
     `;
@@ -3109,7 +3075,7 @@ function renderSolicitarAcesso() {
             </div>
             
             <button type="submit"	
-                class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-500 hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-md">
+                class="btn btn--primary btn--block">
                 <i class="fas fa-paper-plane mr-2"></i>
                 Enviar Solicitação
             </button>
@@ -3322,21 +3288,21 @@ function renderDashboard() {
         }
     });
     
+    const totalEquipamentosCalc = dbRegistros.length;
+
     // --- 5. Helper de Renderização de Card ---
-    const _renderStatCard = (title, value, iconClass, colorClass, details = null, onclick = null) => {
-        const clickable = onclick ? ` onclick="${onclick}" style="cursor:pointer;" role="button"` : '';
+    const _renderStatCard = (title, value, iconClass, accent, details = null, onclick = null) => {
+        const clickable = onclick ? ` onclick="${onclick}" role="button" tabindex="0"` : '';
         return `
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700 futuristic-card"${clickable}>
-                <div class="flex items-center space-x-3">
-                    <div class="p-2 rounded-full ${colorClass} text-white">
-                        <i class="fas ${iconClass} fa-lg"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-${colorClass} dark:text-${colorClass}-300">${title}</p>
-                        <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">${value}</p>
+            <div class="stat-card" style="--accent:${accent}"${clickable}>
+                <div class="stat-card__top">
+                    <span class="stat-card__icon"><i class="fas ${iconClass}"></i></span>
+                    <div class="min-w-0">
+                        <p class="stat-card__label">${title}</p>
+                        <p class="stat-card__value">${value}</p>
                     </div>
                 </div>
-                ${details ? `<div class="mt-2 text-xs text-gray-700 dark:text-gray-300">${details}</div>` : ''}
+                ${details ? `<div class="stat-card__details">${details}</div>` : ''}
             </div>
         `;
     };
@@ -3346,27 +3312,27 @@ function renderDashboard() {
     // Rádios
     const cardHtmlRadios = `
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            ${_renderStatCard('Total Rádios', totalRadios, 'fa-broadcast-tower', 'bg-blue-600')}
-            ${_renderStatCard('Em Uso', radiosEmUso, 'fa-wifi', 'bg-green-main')}
-            ${_renderStatCard('Disponíveis', radiosDisponiveis, 'fa-check-circle', 'bg-sky-500', null, 'showRadiosDisponiveis()')}
-            ${_renderStatCard('Manutenção', radiosManutencao, 'fa-tools', 'bg-yellow-500')}
-            ${_renderStatCard('Sinistro', radiosSinistro, 'fa-exclamation-triangle', 'bg-red-600')}
+            ${_renderStatCard('Total Rádios', totalRadios, 'fa-broadcast-tower', '#2563eb')}
+            ${_renderStatCard('Em Uso', radiosEmUso, 'fa-wifi', '#40800c')}
+            ${_renderStatCard('Disponíveis', radiosDisponiveis, 'fa-check-circle', '#0ea5e9', null, 'showRadiosDisponiveis()')}
+            ${_renderStatCard('Manutenção', radiosManutencao, 'fa-tools', '#d97706')}
+            ${_renderStatCard('Sinistro', radiosSinistro, 'fa-exclamation-triangle', '#dc2626')}
         </div>
     `;
     
     // Bordos
     const cardHtmlBordos = `
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            ${_renderStatCard('Total Componentes', totalBordos, 'fa-memory', 'bg-blue-600')}
+            ${_renderStatCard('Total Componentes', totalBordos, 'fa-memory', '#2563eb')}
             
-            ${_renderStatCard('Kits em Uso', bordosEmUso, 'fa-microchip', 'bg-green-main')}
+            ${_renderStatCard('Kits em Uso', bordosEmUso, 'fa-microchip', '#40800c')}
             
-            ${_renderStatCard('Kits Disponíveis', kitsDisponiveis, 'fa-boxes', 'bg-sky-500')}
+            ${_renderStatCard('Kits Disponíveis', kitsDisponiveis, 'fa-boxes', '#0ea5e9')}
             
-            ${_renderStatCard('Manutenção', manutTelas + manutMags, 'fa-tools', 'bg-yellow-500', 
-                `Tela: ${manutTelas}<br>Mag: ${manutMags}`)}
-            ${_renderStatCard('Sinistro', sinistroTelas + sinistroMags + sinistroChips, 'fa-exclamation-triangle', 'bg-red-600', 
-                `Tela: ${sinistroTelas}<br>Mag: ${sinistroMags}<br>Chip: ${sinistroChips}`)}
+            ${_renderStatCard('Manutenção', manutTelas + manutMags, 'fa-tools', '#d97706', 
+                `<span>Tela: ${manutTelas}</span><span>Mag: ${manutMags}</span>`)}
+            ${_renderStatCard('Sinistro', sinistroTelas + sinistroMags + sinistroChips, 'fa-exclamation-triangle', '#dc2626', 
+                `<span>Tela: ${sinistroTelas}</span><span>Mag: ${sinistroMags}</span><span>Chip: ${sinistroChips}</span>`)}
         </div>
     `;
 
@@ -3375,184 +3341,140 @@ function renderDashboard() {
     // Tabela de Equipamentos
     const tableRowsEquipamentos = GROUPS.map(group => {
         const count = groupCounts[group] || 0;
+        const pct = totalEquipamentosCalc ? Math.round((count / totalEquipamentosCalc) * 100) : 0;
         return `
-            <tr class="dashboard-table-row border-b dark:border-gray-700">
-                <td class="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-100">${group}</td>
-                <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-100">${count}</td>
+            <tr>
+                <td data-label="Grupo" class="font-semibold">${group}</td>
+                <td data-label="Frotas">
+                    <span class="inline-flex items-center gap-2 w-full justify-end md:justify-start">
+                        <span class="num font-bold">${count}</span>
+                        <span class="meter hidden md:block" style="width:120px;--accent:#40800c"><span class="meter__fill" style="width:${pct}%"></span></span>
+                    </span>
+                </td>
             </tr>
         `;
     }).join('');
-    
+
     const totalEquipamentos = dbRegistros.length;
-    
+
     // Tabela de Bordos (Resumo por tipo/componente)
     const tableRowsBordos = TIPOS_BORDO.map(tipo => {
         const stats = bordoStats[tipo];
         return `
-            <tr class="dashboard-table-row border-b dark:border-gray-700">
-                <td class="px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-100">${tipo}</td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-100">${stats.Total}</td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-100">${stats['Em Uso']}</td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-100">${stats['Disponível']}</td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-100">${stats['Manutenção']}</td>
-                <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-100">${stats['Sinistro']}</td>
+            <tr>
+                <td data-label="Tipo" class="font-semibold">${tipo}</td>
+                <td data-label="Total" class="num">${stats.Total}</td>
+                <td data-label="Em uso" class="num">${stats['Em Uso']}</td>
+                <td data-label="Disponível" class="num">${stats['Disponível']}</td>
+                <td data-label="Manutenção" class="num">${stats['Manutenção']}</td>
+                <td data-label="Sinistro" class="num">${stats['Sinistro']}</td>
             </tr>
         `;
     }).join('');
 
+    // Helper de barras
+    const _bars = (items) => items.length ? items.map(item => {
+        const max = item.max || 1;
+        const pct = Math.min(100, Math.round((item.value / max) * 100));
+        return `
+            <div>
+                <div class="flex justify-between items-baseline text-xs mb-1.5 gap-3">
+                    <span class="truncate" style="color:var(--txt-2);font-weight:600">${item.label}</span>
+                    <span class="num font-bold" style="color:var(--txt)">${item.value}</span>
+                </div>
+                <div class="meter" style="--accent:${item.color}"><div class="meter__fill" style="width:${pct}%"></div></div>
+            </div>
+        `;
+    }).join('') : '<p class="text-xs" style="color:var(--txt-3)">Sem dados para exibir.</p>';
+
+    const gestorCount = {};
+    dbRegistros.forEach(reg => {
+        const eq = equipamentoMap[reg.equipamentoId];
+        const gestor = (eq && eq.gestor) || 'Sem Gestor';
+        gestorCount[gestor] = (gestorCount[gestor] || 0) + 1;
+    });
+    const topGestores = Object.entries(gestorCount).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const maxGestor = topGestores.length ? topGestores[0][1] : 1;
+
     // --- 8. Retorno do HTML Final ---
     return `
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">Dashboard de Rádios e Frota</h2>
+        <div class="lf-shell">
+            <div class="page-head">
+                <div>
+                    <span class="page-head__eyebrow"><i class="fas fa-signal"></i> Visão geral</span>
+                    <h1 class="page-head__title">Dashboard de Rádios e Frota</h1>
+                    <p class="page-head__sub">${totalRadios} rádios ativos · ${totalBordos} componentes de bordo · ${totalEquipamentos} vínculos</p>
+                </div>
+                <button onclick="showRadioAmadorModal()" class="btn btn--secondary btn--sm">
+                    <i class="fas fa-broadcast-tower"></i><span>Rádio Amador</span>
+                </button>
+            </div>
 
-            <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Rádios</h3>
-            <div class="mb-10">
-                ${cardHtmlRadios}
-            </div>
-            
-            <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Bordos</h3>
-            <div class="mb-10">
-                ${cardHtmlBordos}
-            </div>
-            
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10">
-            
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700 futuristic-card">
-                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
-                        <i class="fas fa-boxes mr-2 text-green-main"></i>	
-                        Equipamentos com Vínculo Ativo - Total: ${totalEquipamentos}
+            <h2 class="section-title"><i class="fas fa-broadcast-tower"></i> Rádios</h2>
+            <div class="mb-8">${cardHtmlRadios}</div>
+
+            <h2 class="section-title"><i class="fas fa-microchip"></i> Bordos</h2>
+            <div class="mb-8">${cardHtmlBordos}</div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="card card--pad">
+                    <h3 class="panel-title"><i class="fas fa-boxes"></i> Equipamentos com vínculo ativo
+                        <span class="badge badge--muted ml-auto">${totalEquipamentos}</span>
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-green-main/10 dark:bg-green-main/30">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider w-3/5">Grupo</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider w-2/5">Frotas Vinculadas</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                ${tableRowsEquipamentos}
-                            </tbody>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead><tr><th>Grupo</th><th>Frotas vinculadas</th></tr></thead>
+                            <tbody>${tableRowsEquipamentos}</tbody>
                         </table>
                     </div>
                 </div>
-                
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700 futuristic-card">
-                   <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
-    <i class="fas fa-microchip mr-2 text-blue-500"></i>	
-    Resumo de Componentes de Bordo -Total Itens: ${totalBordos}
-</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-blue-500/10 dark:bg-blue-500/30">
-                                <tr>
-                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider">Tipo</th>
-                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider">Total</th>
-                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider">Uso</th>
-                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider">Disp.</th>
-                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider">Manut.</th>
-                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-200 uppercase tracking-wider">Sinist.</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                ${tableRowsBordos}
-                            </tbody>
+
+                <div class="card card--pad">
+                    <h3 class="panel-title"><i class="fas fa-memory"></i> Resumo de componentes de bordo
+                        <span class="badge badge--muted ml-auto">${totalBordos}</span>
+                    </h3>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead><tr><th>Tipo</th><th>Total</th><th>Uso</th><th>Disp.</th><th>Manut.</th><th>Sinist.</th></tr></thead>
+                            <tbody>${tableRowsBordos}</tbody>
                         </table>
                     </div>
                 </div>
-                
             </div>
 
-            <!-- Gráficos de Barras -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700 futuristic-card">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
-                        <i class="fas fa-broadcast-tower mr-2 text-blue-500"></i>
-                        Rádios
-                    </h3>
-                    <div class="space-y-3">
-                        ${[
-                            { label: 'Total', value: totalRadios, color: 'bg-blue-500', max: totalRadios || 1 },
-                            { label: 'Em Uso', value: radiosEmUso, color: 'bg-green-500', max: totalRadios || 1 },
-                            { label: 'Disponíveis', value: radiosDisponiveis, color: 'bg-sky-400', max: totalRadios || 1 },
-                            { label: 'Manutenção', value: radiosManutencao, color: 'bg-yellow-500', max: totalRadios || 1 },
-                            { label: 'Sinistro', value: radiosSinistro, color: 'bg-red-500', max: totalRadios || 1 }
-                        ].map(item => `
-                            <div>
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span class="text-gray-700 dark:text-gray-300">${item.label}</span>
-                                    <span class="font-semibold text-gray-900 dark:text-gray-100">${item.value}</span>
-                                </div>
-                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
-                                    <div class="${item.color} h-3 rounded-full transition-all duration-500" style="width: ${(item.value / item.max) * 100}%"></div>
-                                </div>
-                            </div>
-                        `).join('')}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-5">
+                <div class="card card--pad">
+                    <h3 class="panel-title"><i class="fas fa-broadcast-tower"></i> Distribuição de rádios</h3>
+                    <div class="space-y-3.5">
+                        ${_bars([
+                            { label: 'Total', value: totalRadios, color: '#2563eb', max: totalRadios || 1 },
+                            { label: 'Em uso', value: radiosEmUso, color: '#40800c', max: totalRadios || 1 },
+                            { label: 'Disponíveis', value: radiosDisponiveis, color: '#0ea5e9', max: totalRadios || 1 },
+                            { label: 'Manutenção', value: radiosManutencao, color: '#d97706', max: totalRadios || 1 },
+                            { label: 'Sinistro', value: radiosSinistro, color: '#dc2626', max: totalRadios || 1 }
+                        ])}
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700 futuristic-card">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
-                        <i class="fas fa-microchip mr-2 text-green-500"></i>
-                        Kits de Bordo
-                    </h3>
-                    <div class="space-y-3">
-                        ${[
-                            { label: 'Total Kits', value: totalKits, color: 'bg-blue-500', max: totalKits || 1 },
-                            { label: 'Kits em Uso', value: bordosEmUso, color: 'bg-green-500', max: totalKits || 1 },
-                            { label: 'Kits Disponíveis', value: kitsDisponiveis, color: 'bg-sky-400', max: totalKits || 1 }
-                        ].map(item => `
-                            <div>
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span class="text-gray-700 dark:text-gray-300">${item.label}</span>
-                                    <span class="font-semibold text-gray-900 dark:text-gray-100">${item.value}</span>
-                                </div>
-                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
-                                    <div class="${item.color} h-3 rounded-full transition-all duration-500" style="width: ${(item.value / item.max) * 100}%"></div>
-                                </div>
-                            </div>
-                        `).join('')}
+                <div class="card card--pad">
+                    <h3 class="panel-title"><i class="fas fa-microchip"></i> Kits de bordo</h3>
+                    <div class="space-y-3.5">
+                        ${_bars([
+                            { label: 'Total de kits', value: totalKits, color: '#2563eb', max: totalKits || 1 },
+                            { label: 'Kits em uso', value: bordosEmUso, color: '#40800c', max: totalKits || 1 },
+                            { label: 'Kits disponíveis', value: kitsDisponiveis, color: '#0ea5e9', max: totalKits || 1 }
+                        ])}
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700 futuristic-card">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
-                        <i class="fas fa-users mr-2 text-purple-500"></i>
-                        Equipes com Mais Instalações
-                    </h3>
-                    <div class="space-y-3">
-                        ${(() => {
-                            const gestorCount = {};
-                            dbRegistros.forEach(reg => {
-                                const eq = equipamentoMap[reg.equipamentoId];
-                                const gestor = eq?.gestor || 'Sem Gestor';
-                                gestorCount[gestor] = (gestorCount[gestor] || 0) + 1;
-                            });
-                            const topGestores = Object.entries(gestorCount)
-                                .sort((a, b) => b[1] - a[1])
-                                .slice(0, 10);
-                            const maxGestor = topGestores.length ? topGestores[0][1] : 1;
-                            return topGestores.length ? topGestores.map(([gestor, count]) => `
-                                <div>
-                                    <div class="flex justify-between text-sm mb-1">
-                                        <span class="text-gray-700 dark:text-gray-300 truncate">${gestor}</span>
-                                        <span class="font-semibold text-gray-900 dark:text-gray-100">${count}</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
-                                        <div class="bg-purple-500 h-3 rounded-full transition-all duration-500" style="width: ${(count / maxGestor) * 100}%"></div>
-                                    </div>
-                                </div>
-                            `).join('') : '<p class="text-sm text-gray-500 dark:text-gray-400">Nenhuma instalação registrada.</p>';
-                        })()}
+                <div class="card card--pad">
+                    <h3 class="panel-title"><i class="fas fa-users"></i> Equipes com mais instalações</h3>
+                    <div class="space-y-3.5">
+                        ${_bars(topGestores.map(([gestor, count]) => ({ label: gestor, value: count, color: '#40800c', max: maxGestor })))}
                     </div>
                 </div>
             </div>
-
         </div>
-
-        <button onclick="showRadioAmadorModal()" class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-gray-900 to-gray-800 hover:from-green-800 hover:to-green-700 text-green-400 hover:text-white shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 border border-green-700/40" style="box-shadow: 0 4px 20px rgba(0,255,65,0.15);" title="Rádio Amador">
-            <i class="fas fa-broadcast-tower text-xl"></i>
-        </button>
     `;
 }
 
@@ -3561,32 +3483,38 @@ function renderDashboard() {
 
 function renderCadastro() {
     const tabs = [
-        { id: 'radio', name: 'Rádio' },
-        { id: 'equipamento', name: 'Equipamentos' },
-        { id: 'bordos', name: 'Bordos' }, // Nova aba
-        { id: 'geral', name: 'Geral' }
+        { id: 'radio', name: 'Rádios', icon: 'fa-broadcast-tower' },
+        { id: 'equipamento', name: 'Equipamentos', icon: 'fa-tractor' },
+        { id: 'bordos', name: 'Bordos', icon: 'fa-microchip' },
+        { id: 'geral', name: 'Vínculos', icon: 'fa-link' }
     ];
     
-    const tabNav = tabs.map(tab => {
-        const isActive = currentCadastroTab === tab.id;
-        const activeClass = isActive ? 'text-green-main border-green-main font-semibold' : 'text-gray-500 dark:text-gray-300 border-transparent hover:text-green-main';
-        return `<button data-tab="${tab.id}" class="py-2 px-4 border-b-2 ${activeClass} transition-colors text-sm sm:text-base">${tab.name}</button>`;
-    }).join('');
-    
+    const tabNav = tabs.map(tab => `
+        <button data-tab="${tab.id}" class="tab ${currentCadastroTab === tab.id ? 'is-active' : ''}">
+            <i class="fas ${tab.icon}"></i><span>${tab.name}</span>
+        </button>
+    `).join('');
+
     let content = '';
     switch (currentCadastroTab) {
         case 'radio': content = renderCadastroRadio(); break;
         case 'equipamento': content = renderCadastroEquipamento(); break;
-        case 'bordos': content = renderCadastroBordos(); break; // Nova função
+        case 'bordos': content = renderCadastroBordos(); break;
         case 'geral': content = renderCadastroGeral(); break;
     }
 
     return `
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">Cadastro de Rádios, Equipamentos e Bordos</h2>
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                <div id="cadastro-nav" class="flex border-b border-gray-200 dark:border-gray-700 px-6 pt-2 overflow-x-auto">${tabNav}</div>
-                <div class="p-6">${content}</div>
+        <div class="lf-shell">
+            <div class="page-head">
+                <div>
+                    <span class="page-head__eyebrow"><i class="fas fa-pen-to-square"></i> Gestão de dados</span>
+                    <h1 class="page-head__title">Cadastro</h1>
+                    <p class="page-head__sub">Rádios, equipamentos, componentes de bordo e vínculos</p>
+                </div>
+            </div>
+            <div class="card">
+                <div id="cadastro-nav" class="tabs px-2 md:px-4">${tabNav}</div>
+                <div class="p-4 md:p-6">${content}</div>
             </div>
         </div>
     `;
@@ -3624,20 +3552,20 @@ function renderCadastroRadio() {
 
     const tableRows = paginatedRadios.map(r => {
         const isAtivo = r.ativo !== false;
-        const rowClass = isAtivo ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b dark:border-gray-700' : 'hover:bg-red-50 dark:hover:bg-red-900/10 border-b dark:border-gray-700 opacity-60 italic';
+        const rowClass = isAtivo ? '' : 'row-inactive';
         const statusText = isAtivo ? r.status || 'Disponível' : 'INATIVO';
         // 🌟 ATUALIZADO: Classe para Sinistro
-        const statusClass = isAtivo ? (r.status === 'Disponível' ? 'text-green-main' : (r.status === 'Manutenção' ? 'text-yellow-600' : (r.status === 'Sinistro' ? 'text-red-700' : 'text-blue-600'))) : 'text-red-600';
+        const statusClass = !isAtivo ? 'badge--danger' : (r.status === 'Disponível' ? 'badge--ok' : (r.status === 'Manutenção' ? 'badge--warn' : (r.status === 'Sinistro' ? 'badge--danger' : 'badge--info')));
         
         // Usa text-gray-700 para manter a cor do texto do item inativo em cinza, 
         // apenas a coluna do status e a linha de fundo muda.
         return `
             <tr class="${rowClass}">
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-mono">${r.serie}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${r.modelo}</td>
-                <td class="px-4 py-2 text-sm font-semibold ${statusClass}">${statusText}</td>
-                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button onclick="loadRadioForEdit('${r.id}')" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 dark:hover:bg-gray-700" title="Editar Rádio">
+                <td class="num">${r.serie}</td>
+                <td>${r.modelo}</td>
+                <td><span class="badge ${statusClass}">${statusText}</span></td>
+                <td>
+                    <button onclick="loadRadioForEdit('${r.id}')" class="act-btn" title="Editar Rádio">
                         <i class="fas fa-edit"></i>
                     </button>
                     ${(() => {
@@ -3647,7 +3575,7 @@ function renderCadastroRadio() {
                         const btnClass = isAtivo ? 'hover:text-red-900' : 'hover:text-green-main';
                         const title = isAtivo ? 'Inativar Rádio' : 'Ativar Rádio';
                         return `
-                        <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Rádio ${r.serie}?', () => toggleRecordAtivo('radios', '${r.id}'))" class="${btnClass} p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="${title}">
+                        <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Rádio ${r.serie}?', () => toggleRecordAtivo('radios', '${r.id}'))" class="act-btn" title="${title}">
                             <i class="fas ${iconClass} fa-lg"></i>
                         </button>
                         `;
@@ -3659,12 +3587,12 @@ function renderCadastroRadio() {
 
     let radioPaginator = '';
     if (filteredRadios.length > PAGE_SIZE) {
-        radioPaginator = '<div class="flex justify-center items-center space-x-2 mt-4">';
+        radioPaginator = '<div class="pager">';
         // CORREÇÃO: Chama a função global
-        radioPaginator += `<button ${radioPage === 1 ? 'disabled' : ''} onclick="setRadioPage(-1)" class="px-2 py-1 text-sm rounded-md ${radioPage === 1 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100'}">Anterior</button>`;
-        radioPaginator += `<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Pág ${radioPage} de ${totalRadioPages}</span>`;
+        radioPaginator += `<button ${radioPage === 1 ? 'disabled' : ''} onclick="setRadioPage(-1)" class="btn btn--secondary btn--sm">Anterior</button>`;
+        radioPaginator += `<span class="pager__info">Pág ${radioPage} de ${totalRadioPages}</span>`;
         // CORREÇÃO: Chama a função global
-        radioPaginator += `<button ${radioPage === totalRadioPages ? 'disabled' : ''} onclick="setRadioPage(1)" class="px-2 py-1 text-sm rounded-md ${radioPage === totalRadioPages ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100'}">Próxima</button>`;
+        radioPaginator += `<button ${radioPage === totalRadioPages ? 'disabled' : ''} onclick="setRadioPage(1)" class="btn btn--secondary btn--sm">Próxima</button>`;
         radioPaginator += '</div>';
     }
 
@@ -3692,55 +3620,55 @@ function renderCadastroRadio() {
                         </select>
                     </div>
                     <div class="flex space-x-3">
-                        <button type="submit" class="flex-1 w-full flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-main hover:bg-green-700 shadow-md">
+                        <button type="submit" class="btn btn--primary flex-1">
                             <i class="fas fa-save mr-2"></i> Salvar
                         </button>
-                        <button type="button" onclick="document.getElementById('form-radio').reset(); document.getElementById('radio-id').value='';" class="w-1/4 flex justify-center py-2 px-3 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm">
+                        <button type="button" onclick="document.getElementById('form-radio').reset(); document.getElementById('radio-id').value='';" class="btn btn--secondary">
                             <i class="fas fa-redo"></i>
                         </button>
                     </div>
                 </form>
                 <div class="flex justify-between items-center mt-4">
                     <input type="file" id="radio-import-file" accept=".csv, .xlsx, .xls" class="hidden" onchange="handleImport('radios', event)">
-                    <button onclick="document.getElementById('radio-import-file').click()" class="flex-1 flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-500 hover:bg-indigo-600 shadow-md">
+                    <button onclick="document.getElementById('radio-import-file').click()" class="btn btn--secondary flex-1">
                         <i class="fas fa-upload mr-2"></i> Importar (csv, xlsx)
                     </button>
-                    <button onclick="showModal('Instruções de Importação - Rádio', window.RADIO_IMPORT_INFO, 'info')" class="ml-2 p-2 text-indigo-500 hover:text-indigo-700 transition-colors rounded-full" title="Instruções de arquivo">
+                    <button onclick="showModal('Instruções de Importação - Rádio', window.RADIO_IMPORT_INFO, 'info')" class="icon-btn" title="Instruções de arquivo">
                         <i class="fas fa-info-circle"></i>
                     </button>
                 </div>
             </div>
 
             <div class="lg:col-span-2">
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Rádios Cadastrados (Ativos: ${activeRadiosCount})</h4>
+                <div class="panel-head">
+                    <h4 class="panel-title">Rádios Cadastrados <span class="badge badge--muted">${activeRadiosCount} ativos</span></h4>
                     <input type="text" id="radio-search-input" value="${radioSearch}"	
                         oninput="handleSearchInput(this, 'radioSearch', 1)"	
                         placeholder="Buscar Série ou Modelo..."	
-                        class="rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-main focus:ring-green-main p-2 border text-sm w-full sm:w-1/2 dark:bg-gray-700 dark:text-gray-100">
+                        class="w-full sm:max-w-xs">
                 </div>
-                <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-inner overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-900">
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Série</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Modelo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Ações</th>
+                                <th>Série</th>
+                                <th>Modelo</th>
+                                <th>Status</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">${paginatedRadios.map(r => {
+                        <tbody>${paginatedRadios.map(r => {
                             const isAtivo = r.ativo !== false;
-                            const rowClass = isAtivo ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b dark:border-gray-700' : 'hover:bg-red-50 dark:hover:bg-red-900/10 border-b dark:border-gray-700 opacity-60 italic';
+                            const rowClass = isAtivo ? '' : 'row-inactive';
                             const statusText = isAtivo ? r.status || 'Disponível' : 'INATIVO';
-                            const statusClass = isAtivo ? (r.status === 'Disponível' ? 'text-green-main' : (r.status === 'Manutenção' ? 'text-yellow-600' : (r.status === 'Sinistro' ? 'text-red-700' : 'text-blue-600'))) : 'text-red-600';
+                            const statusClass = !isAtivo ? 'badge--danger' : (r.status === 'Disponível' ? 'badge--ok' : (r.status === 'Manutenção' ? 'badge--warn' : (r.status === 'Sinistro' ? 'badge--danger' : 'badge--info')));
                             return `
                                 <tr class="${rowClass}">
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-mono">${r.serie}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${r.modelo}</td>
-                                    <td class="px-4 py-2 text-sm font-semibold ${statusClass}">${statusText}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-2">
-                                        <button onclick="loadRadioForEdit('${r.id}')" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 dark:hover:bg-gray-700" title="Editar Rádio">
+                                    <td class="num">${r.serie}</td>
+                                    <td>${r.modelo}</td>
+                                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                                    <td>
+                                        <button onclick="loadRadioForEdit('${r.id}')" class="act-btn" title="Editar Rádio">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         ${(() => {
@@ -3749,7 +3677,7 @@ function renderCadastroRadio() {
                                             const btnClass = isAtivo ? 'hover:text-red-900' : 'hover:text-green-main';
                                             const title = isAtivo ? 'Inativar Rádio' : 'Ativar Rádio';
                                             return `
-                                            <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Rádio ${r.serie}?', () => toggleRecordAtivo('radios', '${r.id}'))" class="${btnClass} p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="${title}">
+                                            <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Rádio ${r.serie}?', () => toggleRecordAtivo('radios', '${r.id}'))" class="act-btn" title="${title}">
                                                 <i class="fas ${iconClass} fa-lg"></i>
                                             </button>
                                             `;
@@ -3798,7 +3726,7 @@ function renderCadastroEquipamento() {
     
     const tableRows = paginatedEquipamentos.map(e => {
         const isAtivo = e.ativo !== false;
-        const rowClass = isAtivo ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b dark:border-gray-700' : 'hover:bg-red-50 dark:hover:bg-red-900/10 border-b dark:border-gray-700 opacity-60 italic';
+        const rowClass = isAtivo ? '' : 'row-inactive';
         const frotaClass = isAtivo ? 'text-gray-700 dark:text-gray-300' : 'text-red-700 dark:text-red-400';
         
         // NOVO: Verifica se o equipamento JÁ está em algum registro
@@ -3807,13 +3735,13 @@ function renderCadastroEquipamento() {
 
         return `
             <tr class="${rowClass}">
-                <td class="px-4 py-2 text-sm ${frotaClass} font-mono">${e.frota} ${isAtivo ? '' : '(INATIVO)'}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${e.grupo}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${e.modelo}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hidden md:table-cell">${e.subgrupo || 'N/A'}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hidden lg:table-cell">${e.gestor || 'N/A'}</td>
-                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-2 flex items-center">
-                    <button onclick="loadEquipamentoForEdit('${e.id}')" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 dark:hover:bg-gray-700" title="Editar Equipamento">
+                <td class="${frotaClass} num">${e.frota} ${isAtivo ? '' : '(INATIVO)'}</td>
+                <td>${e.grupo}</td>
+                <td>${e.modelo}</td>
+                <td class="hidden md:table-cell">${e.subgrupo || 'N/A'}</td>
+                <td class="hidden lg:table-cell">${e.gestor || 'N/A'}</td>
+                <td>
+                    <button onclick="loadEquipamentoForEdit('${e.id}')" class="act-btn" title="Editar Equipamento">
                         <i class="fas fa-edit"></i>
                     </button>
                     
@@ -3838,7 +3766,7 @@ function renderCadastroEquipamento() {
                         const btnClass = isAtivo ? 'hover:text-red-900' : 'hover:text-green-main';
                         const title = isAtivo ? 'Inativar Equipamento' : 'Ativar Equipamento';
                         return `
-                        <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Equipamento ${e.frota}?', () => toggleRecordAtivo('equipamentos', '${e.id}'))" class="${btnClass} p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="${title}">
+                        <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Equipamento ${e.frota}?', () => toggleRecordAtivo('equipamentos', '${e.id}'))" class="act-btn" title="${title}">
                             <i class="fas ${iconClass} fa-lg"></i>
                         </button>
                         `;
@@ -3852,12 +3780,12 @@ function renderCadastroEquipamento() {
 
     let equipamentoPaginator = '';
     if (filteredEquipamentos.length > PAGE_SIZE) {
-        equipamentoPaginator = '<div class="flex justify-center items-center space-x-2 mt-4">';
+        equipamentoPaginator = '<div class="pager">';
         // CORREÇÃO: Chama a função global
-        equipamentoPaginator += `<button ${equipamentoPage === 1 ? 'disabled' : ''} onclick="setEquipamentoPage(-1)" class="px-2 py-1 text-sm rounded-md ${equipamentoPage === 1 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100'}">Anterior</button>`;
-        equipamentoPaginator += `<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Pág ${equipamentoPage} de ${totalEquipamentoPages}</span>`;
+        equipamentoPaginator += `<button ${equipamentoPage === 1 ? 'disabled' : ''} onclick="setEquipamentoPage(-1)" class="btn btn--secondary btn--sm">Anterior</button>`;
+        equipamentoPaginator += `<span class="pager__info">Pág ${equipamentoPage} de ${totalEquipamentoPages}</span>`;
         // CORREÇÃO: Chama a função global
-        equipamentoPaginator += `<button ${equipamentoPage === totalEquipamentoPages ? 'disabled' : ''} onclick="setEquipamentoPage(1)" class="px-2 py-1 text-sm rounded-md ${equipamentoPage === totalEquipamentoPages ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100'}">Próxima</button>`;
+        equipamentoPaginator += `<button ${equipamentoPage === totalEquipamentoPages ? 'disabled' : ''} onclick="setEquipamentoPage(1)" class="btn btn--secondary btn--sm">Próxima</button>`;
         equipamentoPaginator += '</div>';
     }
 
@@ -3896,50 +3824,50 @@ function renderCadastroEquipamento() {
                             class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-main focus:ring-green-main p-2 border dark:bg-gray-700 dark:text-gray-100">
                     </div>
                     <div class="flex space-x-3">
-                        <button type="submit" id="btn-equipamento-salvar" class="flex-1 w-full flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-main hover:bg-green-700 shadow-md">
+                        <button type="submit" id="btn-equipamento-salvar" class="btn btn--primary flex-1">
                             <i class="fas fa-save mr-2"></i> Salvar
                         </button>
                         <button type="button" id="btn-equipamento-excluir" onclick="deleteEquipamento()" class="w-1/3 flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 shadow-md">
                             <i class="fas fa-trash mr-2"></i> Excluir
                         </button>
-                        <button type="button" onclick="document.getElementById('form-equipamento').reset(); document.getElementById('equipamento-id').value='';" class="w-1/4 flex justify-center py-2 px-3 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm">
+                        <button type="button" onclick="document.getElementById('form-equipamento').reset(); document.getElementById('equipamento-id').value='';" class="btn btn--secondary">
                             <i class="fas fa-redo"></i>
                         </button>
                     </div>
                 </form>
                 <div class="flex justify-between items-center mt-4">
                     <input type="file" id="equipamento-import-file" accept=".csv, .xlsx, .xls" class="hidden" onchange="handleImport('equipamentos', event)">
-                    <button onclick="document.getElementById('equipamento-import-file').click()" class="flex-1 flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-500 hover:bg-indigo-600 shadow-md">
+                    <button onclick="document.getElementById('equipamento-import-file').click()" class="btn btn--secondary flex-1">
                         <i class="fas fa-upload mr-2"></i> Importar (csv, xlsx)
                     </button>
-                    <button onclick="showModal('Instruções de Importação - Equipamento', window.EQUIPAMENTO_IMPORT_INFO, 'info')" class="ml-2 p-2 text-indigo-500 hover:text-indigo-700 transition-colors rounded-full" title="Instruções de arquivo">
+                    <button onclick="showModal('Instruções de Importação - Equipamento', window.EQUIPAMENTO_IMPORT_INFO, 'info')" class="icon-btn" title="Instruções de arquivo">
                         <i class="fas fa-info-circle"></i>
                     </button>
                 </div>
             </div>
             <div class="lg:col-span-2">
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Equipamentos Cadastrados (Ativos: ${activeEquipamentosCount})</h4>
+                <div class="panel-head">
+                    <h4 class="panel-title">Equipamentos Cadastrados <span class="badge badge--muted">${activeEquipamentosCount} ativos</span></h4>
                     <input type="text" id="equip-search-input" value="${equipamentoSearch}"	
                         oninput="handleSearchInput(this, 'equipamentoSearch', 1)"	
                         placeholder="Buscar Frota, Grupo ou Modelo..."	
-                        class="rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-main focus:ring-green-main p-2 border text-sm w-full sm:w-1/2 dark:bg-gray-700 dark:text-gray-100">
+                        class="w-full sm:max-w-xs">
                 </div>
-                <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-inner overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-900">
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Frota</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Grupo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Modelo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden md:table-cell">Subgrupo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden lg:table-cell">Gestor</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Ações</th>
+                                <th>Frota</th>
+                                <th>Grupo</th>
+                                <th>Modelo</th>
+                                <th class="hidden md:table-cell">Subgrupo</th>
+                                <th class="hidden lg:table-cell">Gestor</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">${paginatedEquipamentos.map(e => {
+                        <tbody>${paginatedEquipamentos.map(e => {
                             const isAtivo = e.ativo !== false;
-                            const rowClass = isAtivo ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b dark:border-gray-700' : 'hover:bg-red-50 dark:hover:bg-red-900/10 border-b dark:border-gray-700 opacity-60 italic';
+                            const rowClass = isAtivo ? '' : 'row-inactive';
                             const frotaClass = isAtivo ? 'text-gray-700 dark:text-gray-300' : 'text-red-700 dark:text-red-400';
                             
                             // NOVO: Verifica se o equipamento JÁ está em algum registro
@@ -3948,13 +3876,13 @@ function renderCadastroEquipamento() {
 
                             return `
                                 <tr class="${rowClass}">
-                                    <td class="px-4 py-2 text-sm ${frotaClass} font-mono">${e.frota} ${isAtivo ? '' : '(INATIVO)'}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${e.grupo}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${e.modelo}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hidden md:table-cell">${e.subgrupo || 'N/A'}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hidden lg:table-cell">${e.gestor || 'N/A'}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-2 flex items-center">
-                                        <button onclick="loadEquipamentoForEdit('${e.id}')" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 dark:hover:bg-gray-700" title="Editar Equipamento">
+                                    <td class="${frotaClass} num">${e.frota} ${isAtivo ? '' : '(INATIVO)'}</td>
+                                    <td>${e.grupo}</td>
+                                    <td>${e.modelo}</td>
+                                    <td class="hidden md:table-cell">${e.subgrupo || 'N/A'}</td>
+                                    <td class="hidden lg:table-cell">${e.gestor || 'N/A'}</td>
+                                    <td>
+                                        <button onclick="loadEquipamentoForEdit('${e.id}')" class="act-btn" title="Editar Equipamento">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         
@@ -3978,7 +3906,7 @@ function renderCadastroEquipamento() {
                                             const btnClass = isAtivo ? 'hover:text-red-900' : 'hover:text-green-main';
                                             const title = isAtivo ? 'Inativar Equipamento' : 'Ativar Equipamento';
                                             return `
-                                            <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Equipamento ${e.frota}?', () => toggleRecordAtivo('equipamentos', '${e.id}'))" class="${btnClass} p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="${title}">
+                                            <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Equipamento ${e.frota}?', () => toggleRecordAtivo('equipamentos', '${e.id}'))" class="act-btn" title="${title}">
                                                 <i class="fas ${iconClass} fa-lg"></i>
                                             </button>
                                             `;
@@ -4040,10 +3968,10 @@ function renderCadastroBordos() {
 
     const tableRows = paginatedBordos.map(b => {
         const isAtivo = b.ativo !== false;
-        const rowClass = isAtivo ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b dark:border-gray-700' : 'hover:bg-red-50 dark:hover:bg-red-900/10 border-b dark:border-gray-700 opacity-60 italic';
+        const rowClass = isAtivo ? '' : 'row-inactive';
         const statusText = isAtivo ? b.status || 'Disponível' : 'INATIVO';
         // 🌟 ATUALIZADO: Classe para Sinistro
-        const statusClass = isAtivo ? (b.status === 'Disponível' ? 'text-green-main' : (b.status === 'Manutenção' ? 'text-yellow-600' : (b.status === 'Sinistro' ? 'text-red-700' : 'text-blue-600'))) : 'text-red-600';
+        const statusClass = !isAtivo ? 'badge--danger' : (b.status === 'Disponível' ? 'badge--ok' : (b.status === 'Manutenção' ? 'badge--warn' : (b.status === 'Sinistro' ? 'badge--danger' : 'badge--info')));
         
         const tipoClass = b.tipo === 'Tela' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300' 
                         : b.tipo === 'Mag' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' 
@@ -4051,14 +3979,14 @@ function renderCadastroBordos() {
         
         return `
             <tr class="${rowClass}">
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                <td>
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tipoClass}">${b.tipo}</span>
                 </td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-mono">${b.numeroSerie}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${b.modelo}</td>
-                <td class="px-4 py-2 text-sm font-semibold ${statusClass}">${statusText}</td>
-                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button onclick="loadBordoForEdit('${b.id}')" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 dark:hover:bg-gray-700" title="Editar Bordo">
+                <td class="num">${b.numeroSerie}</td>
+                <td>${b.modelo}</td>
+                <td><span class="badge ${statusClass}">${statusText}</span></td>
+                <td>
+                    <button onclick="loadBordoForEdit('${b.id}')" class="act-btn" title="Editar Bordo">
                         <i class="fas fa-edit"></i>
                     </button>
                     ${(() => {
@@ -4067,7 +3995,7 @@ function renderCadastroBordos() {
                         const btnClass = isAtivo ? 'hover:text-red-900' : 'hover:text-green-main';
                         const title = isAtivo ? 'Inativar Bordo' : 'Ativar Bordo';
                         return `
-                        <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Bordo ${b.numeroSerie} (${b.tipo})?', () => toggleRecordAtivo('bordos', '${b.id}'))" class="${btnClass} p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="${title}">
+                        <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Bordo ${b.numeroSerie} (${b.tipo})?', () => toggleRecordAtivo('bordos', '${b.id}'))" class="act-btn" title="${title}">
                             <i class="fas ${iconClass} fa-lg"></i>
                         </button>
                         `;
@@ -4079,10 +4007,10 @@ function renderCadastroBordos() {
 
     let bordosPaginator = '';
     if (filteredBordos.length > PAGE_SIZE) {
-        bordosPaginator = '<div class="flex justify-center items-center space-x-2 mt-4">';
-        bordosPaginator += `<button ${bordosPage === 1 ? 'disabled' : ''} onclick="setBordosPage(-1)" class="px-2 py-1 text-sm rounded-md ${bordosPage === 1 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100'}">Anterior</button>`;
-        bordosPaginator += `<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Pág ${bordosPage} de ${totalBordosPages}</span>`;
-        bordosPaginator += `<button ${bordosPage === totalBordosPages ? 'disabled' : ''} onclick="setBordosPage(1)" class="px-2 py-1 text-sm rounded-md ${bordosPage === totalBordosPages ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100'}">Próxima</button>`;
+        bordosPaginator = '<div class="pager">';
+        bordosPaginator += `<button ${bordosPage === 1 ? 'disabled' : ''} onclick="setBordosPage(-1)" class="btn btn--secondary btn--sm">Anterior</button>`;
+        bordosPaginator += `<span class="pager__info">Pág ${bordosPage} de ${totalBordosPages}</span>`;
+        bordosPaginator += `<button ${bordosPage === totalBordosPages ? 'disabled' : ''} onclick="setBordosPage(1)" class="btn btn--secondary btn--sm">Próxima</button>`;
         bordosPaginator += '</div>';
     }
 
@@ -4120,49 +4048,49 @@ function renderCadastroBordos() {
                         </select>
                     </div>
                     <div class="flex space-x-3">
-                        <button type="submit" class="flex-1 w-full flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-main hover:bg-green-700 shadow-md">
+                        <button type="submit" class="btn btn--primary flex-1">
                             <i class="fas fa-save mr-2"></i> Salvar
                         </button>
-                        <button type="button" onclick="document.getElementById('form-bordos').reset(); document.getElementById('bordo-id').value='';" class="w-1/4 flex justify-center py-2 px-3 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm">
+                        <button type="button" onclick="document.getElementById('form-bordos').reset(); document.getElementById('bordo-id').value='';" class="btn btn--secondary">
                             <i class="fas fa-redo"></i>
                         </button>
                     </div>
                 </form>
                 <div class="flex justify-between items-center mt-4">
                     <input type="file" id="bordos-import-file" accept=".csv, .xlsx, .xls" class="hidden" onchange="handleImport('bordos', event)">
-                    <button onclick="document.getElementById('bordos-import-file').click()" class="flex-1 flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-500 hover:bg-indigo-600 shadow-md">
+                    <button onclick="document.getElementById('bordos-import-file').click()" class="btn btn--secondary flex-1">
                         <i class="fas fa-upload mr-2"></i> Importar (csv, xlsx)
                     </button>
-                    <button onclick="showModal('Instruções de Importação - Bordos', window.BORDO_IMPORT_INFO, 'info')" class="ml-2 p-2 text-indigo-500 hover:text-indigo-700 transition-colors rounded-full" title="Instruções de arquivo">
+                    <button onclick="showModal('Instruções de Importação - Bordos', window.BORDO_IMPORT_INFO, 'info')" class="icon-btn" title="Instruções de arquivo">
                         <i class="fas fa-info-circle"></i>
                     </button>
                 </div>
             </div>
 
             <div class="lg:col-span-2">
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Itens de Bordo Cadastrados (Ativos: ${activeBordosCount})</h4>
+                <div class="panel-head">
+                    <h4 class="panel-title">Itens de Bordo Cadastrados <span class="badge badge--muted">${activeBordosCount} ativos</span></h4>
                     <input type="text" id="bordos-search-input" value="${bordosSearch}"	
                         oninput="handleSearchInput(this, 'bordosSearch', 1)"	
                         placeholder="Buscar Tipo, Série ou Modelo..."	
-                        class="rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-main focus:ring-green-main p-2 border text-sm w-full sm:w-1/2 dark:bg-gray-700 dark:text-gray-100">
+                        class="w-full sm:max-w-xs">
                 </div>
-                <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-inner overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-900">
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Série</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Modelo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Ações</th>
+                                <th>Tipo</th>
+                                <th>Série</th>
+                                <th>Modelo</th>
+                                <th>Status</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">${paginatedBordos.map(b => {
+                        <tbody>${paginatedBordos.map(b => {
                             const isAtivo = b.ativo !== false;
-                            const rowClass = isAtivo ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b dark:border-gray-700' : 'hover:bg-red-50 dark:hover:bg-red-900/10 border-b dark:border-gray-700 opacity-60 italic';
+                            const rowClass = isAtivo ? '' : 'row-inactive';
                             const statusText = isAtivo ? b.status || 'Disponível' : 'INATIVO';
-                            const statusClass = isAtivo ? (b.status === 'Disponível' ? 'text-green-main' : (b.status === 'Manutenção' ? 'text-yellow-600' : (b.status === 'Sinistro' ? 'text-red-700' : 'text-blue-600'))) : 'text-red-600';
+                            const statusClass = !isAtivo ? 'badge--danger' : (b.status === 'Disponível' ? 'badge--ok' : (b.status === 'Manutenção' ? 'badge--warn' : (b.status === 'Sinistro' ? 'badge--danger' : 'badge--info')));
                             
                             const tipoClass = b.tipo === 'Tela' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300' 
                                             : b.tipo === 'Mag' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' 
@@ -4170,14 +4098,14 @@ function renderCadastroBordos() {
                             
                             return `
                                 <tr class="${rowClass}">
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <td>
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tipoClass}">${b.tipo}</span>
                                     </td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-mono">${b.numeroSerie}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${b.modelo}</td>
-                                    <td class="px-4 py-2 text-sm font-semibold ${statusClass}">${statusText}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-2">
-                                        <button onclick="loadBordoForEdit('${b.id}')" class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 dark:hover:bg-gray-700" title="Editar Bordo">
+                                    <td class="num">${b.numeroSerie}</td>
+                                    <td>${b.modelo}</td>
+                                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                                    <td>
+                                        <button onclick="loadBordoForEdit('${b.id}')" class="act-btn" title="Editar Bordo">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         ${(() => {
@@ -4186,7 +4114,7 @@ function renderCadastroBordos() {
                                             const btnClass = isAtivo ? 'hover:text-red-900' : 'hover:text-green-main';
                                             const title = isAtivo ? 'Inativar Bordo' : 'Ativar Bordo';
                                             return `
-                                            <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Bordo ${b.numeroSerie} (${b.tipo})?', () => toggleRecordAtivo('bordos', '${b.id}'))" class="${btnClass} p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" title="${title}">
+                                            <button onclick="showConfirmModal('Confirmar ${actionText}ÇÃO', 'Deseja realmente ${actionText} o Bordo ${b.numeroSerie} (${b.tipo})?', () => toggleRecordAtivo('bordos', '${b.id}'))" class="act-btn" title="${title}">
                                                 <i class="fas ${iconClass} fa-lg"></i>
                                             </button>
                                             `;
@@ -4306,7 +4234,7 @@ function renderCadastroGeral() {
         
         // Botão Bordos
         const bordosButtonText = temBordos ? 'Substituir Bordo' : 'Vincular Bordos';
-        const bordosButtonClass = temBordos ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-green-main text-white hover:bg-green-700';
+        const bordosButtonClass = temBordos ? 'btn btn--secondary btn--sm' : 'btn btn--primary btn--sm';
         // Ação: Sempre abre o modal de substituição/vínculo para Bordos.
         const bordosButtonAction = `showVincularModal('${reg.equipamentoId}', 'bordos')`;
 
@@ -4335,15 +4263,15 @@ function renderCadastroGeral() {
 
         return `
             <tr class="${rowClass}">
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-mono">${codigo}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${frotaDisplay}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${r.serie !== 'N/A' ? r.serie : '<span class="text-gray-400">--</span>'}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hidden sm:table-cell">${e.grupo || '--'}</td>
-                <td class="px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hidden md:table-cell font-mono">${t.numeroSerie && t.numeroSerie !== 'N/A' ? t.numeroSerie : '<span class="text-gray-400">--</span>'}</td>
-                <td class="px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hidden md:table-cell font-mono">${m.numeroSerie && m.numeroSerie !== 'N/A' ? m.numeroSerie : '<span class="text-gray-400">--</span>'}</td>
-                <td class="px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hidden md:table-cell font-mono">${c.numeroSerie && c.numeroSerie !== 'N/A' ? c.numeroSerie : '<span class="text-gray-400">--</span>'}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hidden lg:table-cell">${e.gestor && e.gestor !== 'Sem Gestor' ? e.gestor : '<span class="text-gray-400">--</span>'}</td>
-                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                <td class="num">${codigo}</td>
+                <td>${frotaDisplay}</td>
+                <td>${r.serie !== 'N/A' ? r.serie : '<span class="text-gray-400">--</span>'}</td>
+                <td class="hidden sm:table-cell">${e.grupo || '--'}</td>
+                <td class="hidden md:table-cell num">${t.numeroSerie && t.numeroSerie !== 'N/A' ? t.numeroSerie : '<span class="text-gray-400">--</span>'}</td>
+                <td class="hidden md:table-cell num">${m.numeroSerie && m.numeroSerie !== 'N/A' ? m.numeroSerie : '<span class="text-gray-400">--</span>'}</td>
+                <td class="hidden md:table-cell num">${c.numeroSerie && c.numeroSerie !== 'N/A' ? c.numeroSerie : '<span class="text-gray-400">--</span>'}</td>
+                <td class="hidden lg:table-cell">${e.gestor && e.gestor !== 'Sem Gestor' ? e.gestor : '<span class="text-gray-400">--</span>'}</td>
+                <td>
                     ${actionsHtml}
                 </td>
             </tr>
@@ -4352,12 +4280,12 @@ function renderCadastroGeral() {
 
     let geralPaginator = '';
     if (filteredRegistros.length > PAGE_SIZE) {
-        geralPaginator = '<div class="flex justify-center items-center space-x-2 mt-4">';
+        geralPaginator = '<div class="pager">';
         // CORREÇÃO: Chama a função global
-        geralPaginator += `<button ${geralPage === 1 ? 'disabled' : ''} onclick="setGeralPage(-1)" class="px-2 py-1 text-sm rounded-md ${geralPage === 1 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100'}">Anterior</button>`;
-        geralPaginator += `<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Pág ${geralPage} de ${totalGeralPages}</span>`;
+        geralPaginator += `<button ${geralPage === 1 ? 'disabled' : ''} onclick="setGeralPage(-1)" class="btn btn--secondary btn--sm">Anterior</button>`;
+        geralPaginator += `<span class="pager__info">Pág ${geralPage} de ${totalGeralPages}</span>`;
         // CORREÇÃO: Chama a função global
-        geralPaginator += `<button ${geralPage === totalGeralPages ? 'disabled' : ''} onclick="setGeralPage(1)" class="px-2 py-1 text-sm rounded-md ${geralPage === totalGeralPages ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100'}">Próxima</button>`;
+        geralPaginator += `<button ${geralPage === totalGeralPages ? 'disabled' : ''} onclick="setGeralPage(1)" class="btn btn--secondary btn--sm">Próxima</button>`;
         geralPaginator += '</div>';
     }
 
@@ -4387,7 +4315,7 @@ function renderCadastroGeral() {
                     </div>
 
                     <h5 class="text-md font-semibold text-gray-800 dark:text-gray-100 border-b pb-1 mb-2 mt-4 flex items-center">
-                        <i class="fas fa-wifi mr-2 text-indigo-500"></i> Componentes (Ao menos um é obrigatório)
+                        <i class="fas fa-wifi mr-2" style="color:var(--brand)"></i> Componentes (Ao menos um é obrigatório)
                     </h5>
                     
                     <div>
@@ -4425,59 +4353,59 @@ function renderCadastroGeral() {
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-main hover:bg-green-700 shadow-md">
+                    <button type="submit" class="btn btn--primary btn--block">
                         <i class="fas fa-barcode mr-2"></i> Criar Novo Vínculo
                     </button>
                 </form>
             </div>
             
             <div class="lg:col-span-2">
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Registros de Vínculos Ativos (Total: ${dbRegistros.length})</h4>
-                    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <div class="panel-head">
+                    <h4 class="panel-title">Vínculos ativos <span class="badge badge--muted">${dbRegistros.length}</span></h4>
+                    <div class="panel-tools">
                         <input type="text" id="geral-search-input" value="${geralSearch}"	
                             oninput="handleSearchInput(this, 'geralSearch', 1)"	
                             placeholder="Buscar Código, Série ou Frota..."	
-                            class="rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-main focus:ring-green-main p-2 border text-sm w-full sm:w-48 dark:bg-gray-700 dark:text-gray-100">
+                            class="w-full sm:w-52">
                         <button
                             onclick="document.getElementById('geral-import-vinculos-file').click()"
-                            class="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-md transition-colors whitespace-nowrap"
+                            class="btn btn--secondary btn--sm"
                             title="Importar planilha com vínculos em lote (Frota, Rádio, Tela, Mag, Chip). A importação SUBSTITUI todos os dados existentes.">
                             <i class="fas fa-file-import"></i>
-                            <span>Importar Vínculos</span>
+                            <span class="hidden xl:inline">Importar</span>
                         </button>
                         <input type="file" id="geral-import-vinculos-file" accept=".csv,.xlsx,.xls" class="hidden" onchange="handleImportVinculos(event)">
                         <button
                             onclick="downloadModeloVinculos()"
-                            class="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-colors whitespace-nowrap"
+                            class="btn btn--primary btn--sm"
                             title="Baixar planilha modelo para preenchimento">
                             <i class="fas fa-file-excel"></i>
-                            <span>Baixar Modelo</span>
+                            <span class="hidden xl:inline">Modelo</span>
                         </button>
                         <button
                             onclick="showModal('Instruções — Importar Vínculos em Lote', window.VINCULO_IMPORT_INFO, 'info', 'max-w-4xl')"
-                            class="flex items-center justify-center gap-1 px-2 py-2 text-sm font-medium rounded-lg text-indigo-600 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+                            class="btn btn--secondary btn--sm"
                             title="Ver instruções de importação">
                             <i class="fas fa-question-circle"></i>
                         </button>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-inner overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-900">
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Código</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Frota</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Série Rádio / Modelo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden sm:table-cell">Grupo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden md:table-cell">Tela / Modelo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden md:table-cell">Mag / Modelo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden md:table-cell">Chip</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden lg:table-cell">Gestor</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Ações</th>
+                                <th>Código</th>
+                                <th>Frota</th>
+                                <th>Série Rádio / Modelo</th>
+                                <th class="hidden sm:table-cell">Grupo</th>
+                                <th class="hidden md:table-cell">Tela / Modelo</th>
+                                <th class="hidden md:table-cell">Mag / Modelo</th>
+                                <th class="hidden md:table-cell">Chip</th>
+                                <th class="hidden lg:table-cell">Gestor</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">${paginatedRegistros.map(reg => {
+                        <tbody>${paginatedRegistros.map(reg => {
                             const r = radioMap[reg.radioId] || { id: null, serie: 'N/A', modelo: 'N/A' };
                             const e = equipamentoMap[reg.equipamentoId] || { id: null, frota: 'N/A', grupo: 'N/A', subgrupo: 'N/A', codigo: null, ativo: false };
                             const t = bordoMap[reg.telaId] || { numeroSerie: 'N/A', modelo: 'N/A' };
@@ -4509,7 +4437,7 @@ function renderCadastroGeral() {
                             
                             // Botão Bordos
                             const bordosButtonText = temBordos ? 'Substituir Bordo' : 'Vincular Bordos';
-                            const bordosButtonClass = temBordos ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-green-main text-white hover:bg-green-700';
+                            const bordosButtonClass = temBordos ? 'btn btn--secondary btn--sm' : 'btn btn--primary btn--sm';
                             // Ação: Sempre abre o modal de substituição/vínculo para Bordos.
                             const bordosButtonAction = `showVincularModal('${reg.equipamentoId}', 'bordos')`;
 
@@ -4538,15 +4466,15 @@ function renderCadastroGeral() {
 
                             return `
                                 <tr class="${rowClass}">
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-mono">${codigo}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${frotaDisplay}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${r.serie !== 'N/A' ? `<span class="font-mono">${r.serie}</span>${r.modelo && r.modelo !== 'N/A' ? `<br><span class="text-xs text-gray-400">${r.modelo}</span>` : ''}` : '<span class="text-gray-400">--</span>'}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hidden sm:table-cell">${e.grupo || '--'}</td>
-                                    <td class="px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hidden md:table-cell">${t.numeroSerie && t.numeroSerie !== 'N/A' ? `<span class="font-mono">${t.numeroSerie}</span>${t.modelo && t.modelo !== 'N/A' ? `<br><span class="text-gray-400">${t.modelo}</span>` : ''}` : '<span class="text-gray-400">--</span>'}</td>
-                                    <td class="px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hidden md:table-cell">${m.numeroSerie && m.numeroSerie !== 'N/A' ? `<span class="font-mono">${m.numeroSerie}</span>${m.modelo && m.modelo !== 'N/A' ? `<br><span class="text-gray-400">${m.modelo}</span>` : ''}` : '<span class="text-gray-400">--</span>'}</td>
-                                    <td class="px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hidden md:table-cell font-mono">${c.numeroSerie && c.numeroSerie !== 'N/A' ? c.numeroSerie : '<span class="text-gray-400">--</span>'}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hidden lg:table-cell">${e.gestor && e.gestor !== 'Sem Gestor' ? e.gestor : '<span class="text-gray-400">--</span>'}</td>
-                                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                                    <td class="num">${codigo}</td>
+                                    <td>${frotaDisplay}</td>
+                                    <td>${r.serie !== 'N/A' ? `<span class="font-mono">${r.serie}</span>${r.modelo && r.modelo !== 'N/A' ? `<br><span class="text-xs text-gray-400">${r.modelo}</span>` : ''}` : '<span class="text-gray-400">--</span>'}</td>
+                                    <td class="hidden sm:table-cell">${e.grupo || '--'}</td>
+                                    <td class="hidden md:table-cell">${t.numeroSerie && t.numeroSerie !== 'N/A' ? `<span class="font-mono">${t.numeroSerie}</span>${t.modelo && t.modelo !== 'N/A' ? `<br><span class="text-gray-400">${t.modelo}</span>` : ''}` : '<span class="text-gray-400">--</span>'}</td>
+                                    <td class="hidden md:table-cell">${m.numeroSerie && m.numeroSerie !== 'N/A' ? `<span class="font-mono">${m.numeroSerie}</span>${m.modelo && m.modelo !== 'N/A' ? `<br><span class="text-gray-400">${m.modelo}</span>` : ''}` : '<span class="text-gray-400">--</span>'}</td>
+                                    <td class="hidden md:table-cell num">${c.numeroSerie && c.numeroSerie !== 'N/A' ? c.numeroSerie : '<span class="text-gray-400">--</span>'}</td>
+                                    <td class="hidden lg:table-cell">${e.gestor && e.gestor !== 'Sem Gestor' ? e.gestor : '<span class="text-gray-400">--</span>'}</td>
+                                    <td>
                                         ${actionsHtml}
                                     </td>
                                 </tr>
@@ -4705,14 +4633,14 @@ function renderPesquisa() {
     if (paginatedRecords.length > 0) {
         tableRows = paginatedRecords.map(r => `
             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b dark:border-gray-700 cursor-pointer" onclick="abrirRelatorio('${r.id}')">
-                <td class="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono">${r.codigo}</td>
-                <td class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">${r.frota}</td>
-                <td class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hidden sm:table-cell">${r.grupo}</td>
-                <td class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">${r.serieRadio}</td>
-                <td class="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hidden md:table-cell font-mono" title="Tela: ${r.tela.numeroSerie || 'N/A'}">${r.tela.numeroSerie || '<span class="text-gray-400 italic">N/A</span>'}</td>
-                <td class="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hidden md:table-cell font-mono" title="Mag: ${r.mag.numeroSerie || 'N/A'}">${r.mag.numeroSerie || '<span class="text-gray-400 italic">N/A</span>'}</td>
-                <td class="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hidden md:table-cell font-mono" title="Chip: ${r.chip.numeroSerie || 'N/A'}">${r.chip.numeroSerie || '<span class="text-gray-400 italic">N/A</span>'}</td>
-                <td class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hidden lg:table-cell">
+                <td class="num">${r.codigo}</td>
+                <td>${r.frota}</td>
+                <td class="hidden sm:table-cell">${r.grupo}</td>
+                <td>${r.serieRadio}</td>
+                <td class="hidden md:table-cell num" title="Tela: ${r.tela.numeroSerie || 'N/A'}">${r.tela.numeroSerie || '<span class="text-gray-400 italic">N/A</span>'}</td>
+                <td class="hidden md:table-cell num" title="Mag: ${r.mag.numeroSerie || 'N/A'}">${r.mag.numeroSerie || '<span class="text-gray-400 italic">N/A</span>'}</td>
+                <td class="hidden md:table-cell num" title="Chip: ${r.chip.numeroSerie || 'N/A'}">${r.chip.numeroSerie || '<span class="text-gray-400 italic">N/A</span>'}</td>
+                <td class="hidden lg:table-cell">
                     ${r.gestor}
                     <span class="ml-2 text-xs text-green-main dark:text-green-400"><i class="fas fa-file-alt"></i></span>
                 </td>
@@ -4721,8 +4649,12 @@ function renderPesquisa() {
     } else {
         tableRows = `
             <tr>
-                <td colspan="8" class="px-4 py-4 text-center text-gray-500 dark:text-gray-400 italic">
-                    Nenhum registro ativo encontrado.
+                <td colspan="8" data-label="">
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <span class="empty-state__title">Nenhum registro encontrado</span>
+                        <span class="text-xs">Ajuste os termos da busca e tente novamente.</span>
+                    </div>
                 </td>
             </tr>
         `;
@@ -4730,43 +4662,50 @@ function renderPesquisa() {
 
     let pesquisaPaginator = '';
     if (filteredRecords.length > PESQUISA_PAGE_SIZE) {
-        pesquisaPaginator = '<div class="flex justify-center items-center space-x-2 mt-4">';
-        pesquisaPaginator += `<button ${pesquisaPage === 1 ? 'disabled' : ''} onclick="setPesquisaPage(-1)" class="px-2 py-1 text-sm rounded-md ${pesquisaPage === 1 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100'}">Anterior</button>`;
-        pesquisaPaginator += `<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Pág ${pesquisaPage} de ${totalPesquisaPages}</span>`;
-        pesquisaPaginator += `<button ${pesquisaPage === totalPesquisaPages ? 'disabled' : ''} onclick="setPesquisaPage(1)" class="px-2 py-1 text-sm rounded-md ${pesquisaPage === totalPesquisaPages ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-100'}">Próxima</button>`;
+        pesquisaPaginator = '<div class="pager">';
+        pesquisaPaginator += `<button ${pesquisaPage === 1 ? 'disabled' : ''} onclick="setPesquisaPage(-1)" class="btn btn--secondary btn--sm">Anterior</button>`;
+        pesquisaPaginator += `<span class="pager__info">Pág ${pesquisaPage} de ${totalPesquisaPages}</span>`;
+        pesquisaPaginator += `<button ${pesquisaPage === totalPesquisaPages ? 'disabled' : ''} onclick="setPesquisaPage(1)" class="btn btn--secondary btn--sm">Próxima</button>`;
         pesquisaPaginator += '</div>';
     }
 
     return `
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">Pesquisa de Registros Ativos</h2>
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-                <div class="mb-4 flex space-x-2">
-                    <input type="search" id="search-term" placeholder="Buscar por código, frota, série..." value="${searchTermPesquisa}" oninput="handleSearchInput(this, 'searchTermPesquisa', 1)" class="flex-1 rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-main focus:ring-green-main p-2 border dark:bg-gray-700 dark:text-gray-100" autocomplete="off" />
-                    <button id="search-button" class="py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-main hover:bg-green-700 shadow-md" title="Iniciar Busca">
-                        <i class="fas fa-search"></i> <span class="hidden sm:inline">Buscar</span>
-                    </button>
+        <div class="lf-shell">
+            <div class="page-head">
+                <div>
+                    <span class="page-head__eyebrow"><i class="fas fa-magnifying-glass"></i> Consulta</span>
+                    <h1 class="page-head__title">Pesquisa de registros ativos</h1>
+                    <p class="page-head__sub">${filteredRecords.length} de ${allRecords.length} vínculos exibidos</p>
+                </div>
+            </div>
 
+            <div class="card card--pad">
+                <div class="flex gap-2 mb-4">
+                    <input type="search" id="search-term" placeholder="Buscar por código, frota, série, gestor..." value="${searchTermPesquisa}"
+                        oninput="handleSearchInput(this, 'searchTermPesquisa', 1)" autocomplete="off" class="flex-1" />
+                    <button id="search-button" class="btn btn--primary" title="Iniciar busca">
+                        <i class="fas fa-search"></i><span class="hidden sm:inline">Buscar</span>
+                    </button>
                 </div>
 
                 ${reportHtml}
 
-                <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 mt-6">Resultados (${filteredRecords.length})</h4>
-                <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-inner overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-900">
+                <h2 class="section-title mt-6"><i class="fas fa-list"></i> Resultados (${filteredRecords.length})</h2>
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
                             <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Código</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Frota</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden sm:table-cell">Grupo</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Série Rádio</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden md:table-cell">Tela</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden md:table-cell">Mag</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden md:table-cell">Chip</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden lg:table-cell">Gestor</th>
+                                <th>Código</th>
+                                <th>Frota</th>
+                                <th class="hidden sm:table-cell">Grupo</th>
+                                <th>Série Rádio</th>
+                                <th class="hidden md:table-cell">Tela</th>
+                                <th class="hidden md:table-cell">Mag</th>
+                                <th class="hidden md:table-cell">Chip</th>
+                                <th class="hidden lg:table-cell">Gestor</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">${tableRows}</tbody>
+                        <tbody>${tableRows}</tbody>
                     </table>
                 </div>
                 ${pesquisaPaginator}
@@ -4922,17 +4861,12 @@ function renderSettings() {
     const defaultTab = 'system';
     const filteredTabs = tabs.filter(tab => !tab.requiredRole || (tab.requiredRole === 'admin' && isAdmin));
 
-    const tabNav = filteredTabs.map(tab => {
-        const isActive = currentSettingTab === tab.id;
-        const activeClass = isActive ? 'text-green-main border-green-main font-semibold' : 'text-gray-500 dark:text-gray-300 border-transparent hover:text-green-main';
-        return `
-            <a href="#settings/${tab.id}" onclick="updateState('settingTab', '${tab.id}')" class="py-2 px-4 border-b-2 ${activeClass} transition-colors text-sm sm:text-base flex items-center space-x-2">
-                <i class="fas ${tab.icon}"></i>
-                <span>${tab.name}</span>
-            </a>
-        `;
-    }).join('');
-    
+    const tabNav = filteredTabs.map(tab => `
+        <a href="#settings/${tab.id}" onclick="updateState('settingTab', '${tab.id}')" class="tab ${currentSettingTab === tab.id ? 'is-active' : ''}">
+            <i class="fas ${tab.icon}"></i><span>${tab.name}</span>
+        </a>
+    `).join('');
+
     let content = '';
     switch (currentSettingTab) {
         case 'system':
@@ -4950,11 +4884,17 @@ function renderSettings() {
     }
 
     return `
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">Configurações do Sistema</h2>
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                <div id="settings-nav" class="flex border-b border-gray-200 dark:border-gray-700 px-6 pt-2 overflow-x-auto">${tabNav}</div>
-                <div id="settings-content" class="p-6">${content}</div>
+        <div class="lf-shell">
+            <div class="page-head">
+                <div>
+                    <span class="page-head__eyebrow"><i class="fas fa-sliders"></i> Administração</span>
+                    <h1 class="page-head__title">Configurações do sistema</h1>
+                    <p class="page-head__sub">Mapeamento de códigos e gestão de acessos</p>
+                </div>
+            </div>
+            <div class="card">
+                <div id="settings-nav" class="tabs px-2 md:px-4">${tabNav}</div>
+                <div id="settings-content" class="p-4 md:p-6">${content}</div>
             </div>
         </div>
     `;
@@ -4996,7 +4936,7 @@ function renderSettingsSystem() {
                 </div>
                 ${groupInputs}
             </div>
-            <button type="submit" class="flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-main hover:bg-green-700 shadow-md">
+            <button type="submit" class="btn btn--primary">
                 <i class="fas fa-save mr-2"></i> Salvar Mapeamento
             </button>
         </form>
@@ -5075,21 +5015,21 @@ async function renderSettingsUsers() {
         const loginMethod = u.customUsername ? u.customUsername : u.username;
 
         return `
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b dark:border-gray-700 ${isCurrent ? 'bg-indigo-50/50 dark:bg-indigo-900/50' : ''}">
-                <td class="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">${u.name} ${isCurrent ? '<span class="text-xs text-indigo-500">(Você)</span>' : ''}</td>
-                <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-mono break-words-all min-w-0">
+            <tr class="${isCurrent ? 'row-current' : ''}">
+                <td>${u.name} ${isCurrent ? '<span class="badge badge--muted">Você</span>' : ''}</td>
+                <td class="num break-words-all">
                     ${loginMethod} 
                     ${u.customUsername ? '<span class="text-xs text-green-main">(User Login)</span>' : '<span class="text-xs text-blue-500">(Email Login)</span>'}
                 </td>
-                <td class="px-4 py-2 text-sm font-semibold ${u.role === 'admin' ? 'text-green-main' : 'text-blue-600'}">${(u.role || 'N/A').toUpperCase()}</td>
-                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button onclick="loadUserForEdit('${u.id}')" ${canEditDelete ? '' : 'disabled'} class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 dark:hover:bg-gray-700 ${canEditDelete ? '' : 'opacity-50 cursor-not-allowed'}" title="Editar Perfil">
+                <td><span class="badge ${u.role === 'admin' ? 'badge--ok' : 'badge--info'}">${(u.role || 'N/A').toUpperCase()}</span></td>
+                <td>
+                    <button onclick="loadUserForEdit('${u.id}')" ${canEditDelete ? '' : 'disabled'} class="act-btn" title="Editar Perfil">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button onclick="showPermissionModal('${u.id}')" ${canEditDelete ? '' : 'disabled'} class="text-green-600 hover:text-green-900 p-1 rounded-full hover:bg-green-50 dark:hover:bg-gray-700 ${canEditDelete ? '' : 'opacity-50 cursor-not-allowed'}" title="Alterar permissões">
                         <i class="fas fa-user-cog"></i>
                     </button>
-                    <button onclick="showConfirmModal('Confirmar Exclusão', 'Deseja realmente excluir o perfil de ${u.name}? Isso é irreversível.', () => deleteUser('${u.id}'))" ${canEditDelete ? '' : 'disabled'} class="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50 dark:hover:bg-gray-700 ${canEditDelete ? '' : 'opacity-50 cursor-not-allowed'}" title="Excluir Perfil">
+                    <button onclick="showConfirmModal('Confirmar Exclusão', 'Deseja realmente excluir o perfil de ${u.name}? Isso é irreversível.', () => deleteUser('${u.id}'))" ${canEditDelete ? '' : 'disabled'} class="act-btn act-btn--danger" title="Excluir Perfil">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </td>
@@ -5166,10 +5106,10 @@ async function renderSettingsUsers() {
                     </div>
 
                     <div class="flex space-x-3">
-                        <button type="submit" class="flex-1 w-full flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-main hover:bg-green-700 shadow-md">
+                        <button type="submit" class="btn btn--primary flex-1">
                             <i class="fas fa-save mr-2"></i> Salvar Perfil
                         </button>
-                        <button type="button" id="user-reset-btn" class="w-1/4 flex justify-center py-2 px-3 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm">
+                        <button type="button" id="user-reset-btn" class="btn btn--secondary">
                             <i class="fas fa-redo"></i>
                         </button>
                     </div>
@@ -5178,17 +5118,17 @@ async function renderSettingsUsers() {
 
             <div class="lg:col-span-2">
                 <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Perfis Cadastrados (Total: ${usersFromDB.length})</h4>
-                <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-inner overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-900">
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Nome</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase min-w-32">Login Principal</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Perfil</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Ações</th>
+                                <th>Nome</th>
+                                <th class="min-w-32">Login Principal</th>
+                                <th>Perfil</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">${tableRows}</tbody>
+                        <tbody>${tableRows}</tbody>
                     </table>
                 </div>
                 <p class="mt-4 text-sm text-yellow-600 dark:text-yellow-400">
@@ -6421,6 +6361,30 @@ function initApp() {
     }
 }
 
+// Adiciona rótulos (data-label) às células para o modo card no mobile
+function applyResponsiveTableLabels(scope) {
+    (scope || document).querySelectorAll('table.data-table').forEach(table => {
+        const heads = Array.from(table.querySelectorAll('thead th')).map(th => (th.textContent || '').trim());
+        if (!heads.length) return;
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            Array.from(tr.children).forEach((td, i) => {
+                if (!td.hasAttribute('data-label')) td.setAttribute('data-label', heads[i] || '');
+            });
+        });
+    });
+}
+
+let __swRegistered = false;
+function registerServiceWorkerOnce() {
+    if (__swRegistered || !('serviceWorker' in navigator)) return;
+    if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+    __swRegistered = true;
+    const swUrl = new URL('service-worker.js', document.baseURI).href;
+    navigator.serviceWorker.register(swUrl)
+        .then(() => console.log('Service Worker registrado'))
+        .catch(e => console.warn('Falha ao registrar SW', e));
+}
+
 function renderApp() {
     const root = document.getElementById('app');
     
@@ -6435,7 +6399,7 @@ function renderApp() {
         contentHTML = renderLoadingScreen();
     } else if (currentUser) {
         contentHTML += renderTopBar();
-        contentHTML += '<main class="pb-20 md:pb-8">';
+        contentHTML += '<main class="fade-in-up">';
         
         const canAccessCurrentPage = currentUser.role === 'admin' || (currentUser.permissions && currentUser.permissions[currentPage]);
 
@@ -6463,7 +6427,7 @@ function renderApp() {
                     contentHTML += renderDashboard();   
             }
         }
-        contentHTML += '</main>';
+        contentHTML += '</main><div class="mobile-nav__spacer" aria-hidden="true"></div>';
     } else if (isAuthReady) {
         currentPage = 'login';
         contentHTML += renderLogin();
@@ -6472,6 +6436,10 @@ function renderApp() {
     }
 
     root.innerHTML = contentHTML;
+    applyResponsiveTableLabels(root);
+    root.querySelectorAll('.tabs .is-active, .tabs .tab-active').forEach(el => {
+        try { el.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (_) {}
+    });
 
     if (focusedSearchInputId) {
         const el = document.getElementById(focusedSearchInputId);
@@ -6481,17 +6449,7 @@ function renderApp() {
         }
     }
 
-    // --- Registro do Service Worker ---
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', async () => {
-            try {
-                await navigator.serviceWorker.register('/service-worker.js');
-                console.log('✅ Service Worker registrado');
-            } catch (e) {
-                console.warn('⚠️ Falha ao registrar SW', e);
-            }
-        });
-    }
+    registerServiceWorkerOnce();
 
     // Anexa eventos
     if (!isLoggingIn) {
@@ -6630,7 +6588,7 @@ function renderProfileModalContent() {
                         <input type="text" id="profile-name" required value="${currentUser.name}"
                             class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-green-main focus:ring-green-main p-2 border text-sm dark:bg-gray-700 dark:text-gray-100">
                     </div>
-                    <button type="submit" class="w-full flex justify-center py-2 px-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-main hover:bg-green-700 shadow-md">
+                    <button type="submit" class="btn btn--primary btn--block">
                         <i class="fas fa-save mr-2"></i> Salvar Nome
                     </button>
                 </form>
